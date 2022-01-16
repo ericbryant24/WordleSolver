@@ -18,7 +18,7 @@ namespace WordleGame
 
       while (!game.IsOver)
       {
-        engine.TakeTurn(guessWord => {
+        engine.TakeTurn(game.MaxTurns - game.OnTurn, guessWord => {
           var turn = game.OnTurn;
           var response = game.Guess(guessWord);
           if (output)
@@ -56,7 +56,7 @@ namespace WordleGame
       var manager = new GameManager();
       for(var i = 0; i < numberOfGames; i++)
       {
-        manager.PlayGame(engine, false);
+        manager.PlayGame(engine);
       }
 
       var games = manager.GetGamesByPlayer(engine.Name);

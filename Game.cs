@@ -3,14 +3,14 @@ namespace WordleGame
 {
   public class Game
   {
-    private const int MaxTurns = 6;
+    public int MaxTurns => 6;
 
     public Game(string playerName, IEnumerable<string>? goalWordsToExclude = null)
     {
       goalWordsToExclude = goalWordsToExclude ?? new string[] { };
       GameKey = Guid.NewGuid();
       PlayerName = playerName;
-      var allWords = Words.All.Where(w => !goalWordsToExclude.Contains(w));
+      var allWords = Words.AllAnswers.Where(w => !goalWordsToExclude.Contains(w));
       var index = new Random().Next(allWords.Count());
       GoalWord = allWords.ElementAt(index);
       OnTurn = 1;

@@ -16,9 +16,9 @@ namespace WordleGame
       Reset();
     }
 
-    public void TakeTurn(Func<string, GuessResponse> guessFunc)
+    public void TakeTurn(int turnsLeft, Func<string, GuessResponse> guessFunc)
     {
-      var guess = ChooseGuess();
+      var guess = ChooseGuess(turnsLeft);
       var response = guessFunc(guess);
       var result = response.Result;
       ProcessResult(guess, result);
@@ -26,7 +26,7 @@ namespace WordleGame
 
     public void Reset()
     {
-      _possibleAnswers = Words.All.ToList();
+      _possibleAnswers = Words.AllAnswers.ToList();
       _scoredAnswers.Clear();
       _scoredAnswers.Clear();
       _scoredGuesses.Clear();
@@ -36,9 +36,9 @@ namespace WordleGame
       ScoreWords();
     }
 
-    protected virtual string ChooseGuess()
+    protected virtual string ChooseGuess(int turnsLeft)
     {
-      if(_possibleAnswers.Count == 1)
+      if(_possibleAnswers.Count == 1 || turnsLeft == 0)
       {
         return _possibleAnswers[0];
       }
@@ -147,9 +147,19 @@ namespace WordleGame
   {
     public new string Name => "Focus On The Answers Engine";
 
-    protected override string ChooseGuess()
+    protected override string ChooseGuess(int turnsLeft)
     {
       return _scoredAnswers.OrderByDescending(a => a.Value).First().Key;
+    }
+  }
+
+  public class RandomEngine : HighestOccuranceEngine, IGameEngine
+  {
+    public new string Name => "Random Engine";
+
+    protected override string ChooseGuess(int turnsLeft)
+    {
+      return _possibleAnswers.ElementAt(new Random().Next(_scoredAnswers.Count()));
     }
   }
 }

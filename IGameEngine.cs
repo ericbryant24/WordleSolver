@@ -7,6 +7,6 @@ namespace WordleGame
     string Name { get; }
 
     void Reset();
-    void TakeTurn(Func<string, GuessResponse> guessFunc);
+    void TakeTurn(int turnsLeft, Func<string, GuessResponse> guessFunc);
   }
 }
