@@ -5,19 +5,14 @@ namespace WordleGame
   {
     public int MaxTurns => 6;
 
-    public Game(string playerName, IEnumerable<string>? goalWordsToExclude = null)
+    public Game(string goalWord)
     {
-      goalWordsToExclude = goalWordsToExclude ?? new string[] { };
       GameKey = Guid.NewGuid();
-      PlayerName = playerName;
-      var allWords = Words.AllAnswers.Where(w => !goalWordsToExclude.Contains(w));
-      var index = new Random().Next(allWords.Count());
-      GoalWord = allWords.ElementAt(index);
       OnTurn = 1;
+      GoalWord = goalWord;
     }
 
     public Guid GameKey { get; private set; }
-    public string PlayerName { get; private set; }
     public string GoalWord { get; private set; }
     public int OnTurn { get; private set; }
     public bool IsOver { get; private set; }

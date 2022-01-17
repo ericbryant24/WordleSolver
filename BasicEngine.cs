@@ -10,17 +10,25 @@ namespace WordleGame
     protected List<char> _foundLetters = new();
     protected List<char> _foundExclusions = new();
     protected Dictionary<int, char> _foundPositions = new();
+    protected int OnTurn = 1;
+    protected const int NumberOfTurns = 6;
 
     public BasicEngine()
     {
       Reset();
     }
 
-    public void TakeTurn(int turnsLeft, Func<string, GuessResponse> guessFunc)
+    public void TakeTurn(Func<string, GuessResponse> guessFunc)
     {
-      var guess = ChooseGuess(turnsLeft);
+      var guess = ChooseGuess();
       var response = guessFunc(guess);
       var result = response.Result;
+      OnTurn = response.OnTurn;
+      if(response.IsOver)
+      {
+        Reset();
+        return;
+      }
       ProcessResult(guess, result);
     }
 
@@ -28,16 +36,18 @@ namespace WordleGame
     {
       _possibleAnswers = Words.AllAnswers.ToList();
       _scoredAnswers.Clear();
-      _scoredAnswers.Clear();
+      _scoredLetters.Clear();
       _scoredGuesses.Clear();
       _foundLetters.Clear();
       _foundExclusions.Clear();
       _foundPositions.Clear();
+      OnTurn = 0;
       ScoreWords();
     }
 
-    protected virtual string ChooseGuess(int turnsLeft)
+    protected virtual string ChooseGuess()
     {
+      var turnsLeft = NumberOfTurns - OnTurn;
       if(_possibleAnswers.Count == 1 || turnsLeft == 0)
       {
         return _possibleAnswers[0];
@@ -79,6 +89,7 @@ namespace WordleGame
 
       RemoveImpossibleAnswers();
       ScoreWords();
+
     }
 
     private void RemoveImpossibleAnswers()
@@ -119,7 +130,8 @@ namespace WordleGame
         .Select(a => a.Distinct())
         .SelectMany(a => a)
         .GroupBy(a => a)
-        .ToDictionary(a => a.Key, a => a.Count());
+        .ToDictionary(a => a.Key, a => 
+        _foundLetters.Concat(_foundExclusions).Contains(a.Key) ? 0 : a.Count());
     }
   }
 
@@ -138,7 +150,7 @@ namespace WordleGame
       return letters.ToDictionary(l => l, l =>
       {
         var count = _possibleAnswers.Count(a => a.Contains(l));
-        return half = Math.Abs(half - count);
+        return _foundLetters.Concat(_foundExclusions).Contains(l) ? 0 : half - Math.Abs(half - count);
       });
     }
   }
@@ -147,7 +159,7 @@ namespace WordleGame
   {
     public new string Name => "Focus On The Answers Engine";
 
-    protected override string ChooseGuess(int turnsLeft)
+    protected override string ChooseGuess()
     {
       return _scoredAnswers.OrderByDescending(a => a.Value).First().Key;
     }
@@ -157,7 +169,7 @@ namespace WordleGame
   {
     public new string Name => "Random Engine";
 
-    protected override string ChooseGuess(int turnsLeft)
+    protected override string ChooseGuess()
     {
       return _possibleAnswers.ElementAt(new Random().Next(_scoredAnswers.Count()));
     }

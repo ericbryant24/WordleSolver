@@ -10,9 +10,9 @@ var fotaEngine = new FocusOnTheAnswersEngine();
 var randomEngine = new RandomEngine();
 
 engineTester.TestEngine(hoEngine, 100);
-engineTester.TestEngine(hiEngine, 100);
-engineTester.TestEngine(fotaEngine, 100);
-engineTester.TestEngine(randomEngine, 100);
+//engineTester.TestEngine(hiEngine, 100, false);
+//engineTester.TestEngine(fotaEngine, 100, false);
+//engineTester.TestEngine(randomEngine, 100, false);
 
 Console.WriteLine();
 Console.WriteLine("Press Enter To Continue");

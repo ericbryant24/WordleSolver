@@ -1,51 +1,80 @@
 ﻿// See https://aka.ms/new-console-template for more information
 namespace WordleGame
 {
-  public class GameManager
+  public class ManagedGame
   {
-    private readonly List<Game> _games = new();
+    private bool _onlyOutputLosses;
+    private bool _hideOutput;
+    private string? _goalWord;
+    private readonly IGameEngine _engine;
+    private string[] _excludedWords = Array.Empty<string>();
 
-    public Guid PlayGame(IGameEngine engine, bool output = true)
+    public string PlayerName { get; private set; }
+    public Game? Game { get; private set; }
+
+    public ManagedGame(IGameEngine engine)
     {
-      if(output)
-      {
-        Console.WriteLine($"{engine.Name} is playing Wordle");
-      }
+      _engine = engine;
+      PlayerName = engine.Name;
+    }
 
-      var wordsAlreadyPlayed = _games.Where(g => g.PlayerName == engine.Name).Select(g => g.GoalWord);
-      var game = new Game(engine.Name, wordsAlreadyPlayed);
-      _games.Add(game);
+    public ManagedGame OnlyOutputLosses()
+    {
+      _onlyOutputLosses = true;
+      return this;
+    }
 
-      while (!game.IsOver)
+    public ManagedGame HideOutput()
+    {
+      _hideOutput = true;
+      return this;
+    }
+
+    public ManagedGame UseGoalWord(string goalWord)
+    {
+      _goalWord = goalWord;
+      return this;
+    }
+
+    public ManagedGame ExcludeWords(IEnumerable<string> words)
+    {
+      _excludedWords = words.ToArray();
+      return this;
+    }
+
+    public Game Play()
+    {
+      var output = new List<string> { $"{_engine.Name} is playing Wordle" };
+
+      var words = Words.AllAnswers.Where(w => !_excludedWords.Contains(w));
+      var index = new Random().Next(words.Count());
+      var goalWord = _goalWord ?? words.ElementAt(index);
+
+      Game = new Game(goalWord);
+
+      while (!Game.IsOver)
       {
-        engine.TakeTurn(game.MaxTurns - game.OnTurn, guessWord => {
-          var turn = game.OnTurn;
-          var response = game.Guess(guessWord);
-          if (output)
-          {
-            Console.WriteLine($"{turn}: {guessWord}");
-            Console.WriteLine($"{turn}: {string.Join("", response.Result)}");
-          }
+        _engine.TakeTurn(guessWord => {
+          var turn = Game.OnTurn;
+          var response = Game.Guess(guessWord);
+          output.Add($"{turn}: {guessWord}");
+          output.Add($"{turn}: {string.Join("", response.Result)}");
+
           return response;
         });
       }
 
-      engine.Reset();
+      var wonLost = Game.DidWin ? "won" : "lost";
 
-      var wonLost = game.DidWin ? "won" : "lost";
+      output.Add($"{_engine.Name} has {wonLost}");
+      output.Add($"The word was \"{Game.GoalWord}\"");
 
-      if (output)
+      if(!_hideOutput && (!_onlyOutputLosses || !Game.DidWin))
       {
-        Console.WriteLine($"{engine.Name} has {wonLost}");
-        Console.WriteLine($"The word was \"{game.GoalWord}\"");
+        output.ForEach(Console.WriteLine);
       }
 
-      return game.GameKey;
-    }
-
-    public Game[] GetGamesByPlayer(string playerName)
-    {
-      return _games.Where(g => g.PlayerName == playerName).ToArray();
+      return Game;
     }
   }
 
@@ -53,18 +82,21 @@ namespace WordleGame
   {
     public void TestEngine(IGameEngine engine, int numberOfGames)
     {
-      var manager = new GameManager();
+      var games = new List<Game>();
       for(var i = 0; i < numberOfGames; i++)
       {
-        manager.PlayGame(engine);
+        games.Add(new ManagedGame(engine)
+          .ExcludeWords(games.Select(g => g.GoalWord))
+          .OnlyOutputLosses()
+          .Play()
+        );
       }
 
-      var games = manager.GetGamesByPlayer(engine.Name);
       var wins = games.Count(g => g.DidWin);
       var losses = games.Count(g => !g.DidWin);
       var avgTurns = games.Average(g => g.OnTurn);
 
-      Console.WriteLine($"{engine.Name} has played {games.Length} games");
+      Console.WriteLine($"{engine.Name} has played {games.Count()} games");
       Console.WriteLine($"Record: {wins} - {losses}");
       Console.WriteLine($"Avg # of Turns: {avgTurns}");
     }
